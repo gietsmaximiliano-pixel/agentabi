@@ -94,9 +94,7 @@ class OpenClawAdapter(RuntimeAdapter):
                 components.append(make_component(Category.CONTEXT, path.name, root, path))
             elif relative.startswith("memory/") and path.suffix == ".md":
                 components.append(
-                    make_component(
-                        Category.MEMORY, relative.removeprefix("memory/"), root, path
-                    )
+                    make_component(Category.MEMORY, relative.removeprefix("memory/"), root, path)
                 )
             elif relative.startswith("skills/") and path.suffix == ".md":
                 skill_name = path.parent.name if path.name == "SKILL.md" else path.stem

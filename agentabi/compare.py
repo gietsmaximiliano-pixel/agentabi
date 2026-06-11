@@ -116,9 +116,7 @@ def _memory_findings(before_map: ComponentMap, after_map: ComponentMap) -> list[
                 severity=Severity.HIGH,
                 category=Category.MEMORY,
                 title="Substantial memory-count drop",
-                detail=(
-                    f"Memory files dropped from {len(before_memory)} to {len(after_memory)}."
-                ),
+                detail=(f"Memory files dropped from {len(before_memory)} to {len(after_memory)}."),
             )
         )
     return findings
@@ -258,8 +256,7 @@ def _tool_policy_findings(before_map: ComponentMap, after_map: ComponentMap) -> 
                 severity=Severity.HIGH,
                 category=Category.TOOL_POLICY,
                 title="Unrestricted shell access introduced",
-                detail=f"Shell policy changed from '{before_shell or 'unset'}' to "
-                "'unrestricted'.",
+                detail=f"Shell policy changed from '{before_shell or 'unset'}' to 'unrestricted'.",
             )
         )
     return findings
@@ -292,9 +289,7 @@ def _changed_findings(
                     )
                 )
         elif category_value == Category.MCP.value:
-            if before_component.metadata.get("command") != after_component.metadata.get(
-                "command"
-            ):
+            if before_component.metadata.get("command") != after_component.metadata.get("command"):
                 findings.append(
                     Finding(
                         id=f"mcp-command:{name}",
@@ -361,8 +356,7 @@ def _changed_findings(
                         severity=Severity.WARNING,
                         category=Category.SKILL,
                         title=f"Skill '{name}' digest changed",
-                        detail="The skill definition content changed; review the diff "
-                        "manually.",
+                        detail="The skill definition content changed; review the diff manually.",
                     )
                 )
         if (
@@ -404,11 +398,7 @@ def _schema_findings(after: Manifest) -> list[Finding]:
             )
         )
     unsupported = sorted(
-        {
-            component.name
-            for component in after.components
-            if component.category is Category.UNKNOWN
-        }
+        {component.name for component in after.components if component.category is Category.UNKNOWN}
     )
     if unsupported:
         findings.append(

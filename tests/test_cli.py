@@ -65,9 +65,7 @@ def _manifests(fixtures_dir, tmp_path):
 def test_diff_exit_codes(fixtures_dir, tmp_path):
     before, after = _manifests(fixtures_dir, tmp_path)
     assert runner.invoke(app, ["diff", str(before), str(after)]).exit_code == 1
-    assert (
-        runner.invoke(app, ["diff", str(before), str(after), "--fail-on", "none"]).exit_code == 0
-    )
+    assert runner.invoke(app, ["diff", str(before), str(after), "--fail-on", "none"]).exit_code == 0
     assert (
         runner.invoke(app, ["diff", str(before), str(before), "--fail-on", "warning"]).exit_code
         == 0
