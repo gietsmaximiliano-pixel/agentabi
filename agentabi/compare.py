@@ -7,6 +7,7 @@ from pathlib import PurePosixPath
 
 from agentabi import __version__
 from agentabi.models import (
+    SEVERITY_ORDER,
     Category,
     Component,
     ComponentChange,
@@ -14,7 +15,6 @@ from agentabi.models import (
     Finding,
     Manifest,
     Severity,
-    SEVERITY_ORDER,
 )
 from agentabi.scoring import recommend, score
 

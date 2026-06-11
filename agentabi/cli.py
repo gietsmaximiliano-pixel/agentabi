@@ -10,7 +10,7 @@ from rich.console import Console
 from agentabi import __version__
 from agentabi.compare import compare
 from agentabi.demo import build_demo_states
-from agentabi.models import DiffReport, Manifest, Severity, SEVERITY_ORDER
+from agentabi.models import SEVERITY_ORDER, DiffReport, Manifest, Severity
 from agentabi.report import render_terminal, to_json, to_markdown
 from agentabi.scanner import ScanError, snapshot as scan_snapshot
 

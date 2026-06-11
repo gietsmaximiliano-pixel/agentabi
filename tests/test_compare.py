@@ -144,7 +144,13 @@ def test_relocation_same_runtime_only():
 
 def test_score_clamped_and_recommendation():
     breaking = [
-        Finding(id=f"b{i}", severity=Severity.BREAKING, category=Category.MEMORY, title="t", detail="d")
+        Finding(
+            id=f"b{i}",
+            severity=Severity.BREAKING,
+            category=Category.MEMORY,
+            title="t",
+            detail="d",
+        )
         for i in range(6)
     ]
     assert score(breaking) == 0

@@ -6,7 +6,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from agentabi.models import DiffReport, Severity, SEVERITY_ORDER
+from agentabi.models import SEVERITY_ORDER, DiffReport, Severity
 from agentabi.scoring import DO_NOT_DEPLOY
 
 SEVERITY_STYLES: dict[Severity, str] = {
