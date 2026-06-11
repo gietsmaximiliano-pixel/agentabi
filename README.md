@@ -1,93 +1,95 @@
-# skibidi
+# AgentABI
 
+> Detect what an AI-agent update or migration will forget, disable, or silently change before you deploy it.
 
+AgentABI is a **local-first, read-only compatibility checker** for persistent AI-agent state. It compares an existing installation with a candidate updated or migrated state directory and detects operational regressions: lost memory, vanished skills, disappeared cron deliveries, broadened permissions, and more.
 
-## Getting started
+> AgentABI is an independent community project. It is not affiliated with OpenClaw, Hermes Agent, Nous Research, Anthropic, or OpenAI.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## Why
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+Agent updates and cross-runtime migrations routinely break things silently: a memory directory is not copied, a required skill is dropped, a cron job loses its delivery target, or a tool policy quietly becomes `allow: ["*"]`. AgentABI catches these regressions **before** you deploy.
 
-## Add your files
+## Guarantees
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+- **Offline.** No network requests, ever.
+- **Deterministic.** Same inputs always produce the same manifests and reports.
+- **Read-only.** Input directories are never modified.
+- **Secret-safe.** Secret files (`.env`, `auth.json`, `*.pem`, `id_rsa`, ...) are never opened; only their existence and size are recorded. Sensitive metadata keys (`token`, `api_key`, `webhook`, ...) are recursively redacted.
+- **Bounded.** Symlinks pointing outside the scanned root are never followed; recursion depth, file count, and file size are limited.
 
+## Supported runtimes (v0.1.0)
+
+- **OpenClaw**
+- **Hermes Agent**
+- **auto** (runtime auto-detection)
+
+## Install
+
+```bash
+pip install agentabi          # once published
+# or from source:
+pip install -e ".[dev]"
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/jairgimenez233-group/skibidi.git
-git branch -M main
-git push -uf origin main
+
+Requires Python 3.11+.
+
+## Quickstart
+
+```bash
+# Try it instantly with synthetic data (no real state touched):
+agentabi demo
+
+# Snapshot an existing installation:
+agentabi snapshot ~/agent-state --runtime auto --out before.json
+
+# Snapshot the migrated candidate:
+agentabi snapshot ~/agent-state-new --out after.json
+
+# Compare:
+agentabi diff before.json after.json --markdown report.md --fail-on breaking
+
+# Or do it all in one step:
+agentabi verify --source ~/agent-state --candidate ~/agent-state-new --out-dir ./report
+
+# Health-check a single directory:
+agentabi doctor ~/agent-state
 ```
 
-## Integrate with your tools
+## Commands
 
-* [Set up project integrations](https://gitlab.com/jairgimenez233-group/skibidi/-/settings/integrations)
+| Command | Purpose |
+| --- | --- |
+| `agentabi snapshot <path>` | Scan a state directory into a normalized, versioned JSON manifest. |
+| `agentabi diff <before> <after>` | Compare two manifests; terminal, `--json`, and `--markdown` output; `--score-only`; `--fail-on none\|warning\|high\|breaking`. |
+| `agentabi verify` | Snapshot `--source` and `--candidate`, compare, and write all reports to `--out-dir`. |
+| `agentabi doctor <path>` | Inspect a single state directory and report runtime, components, and problems. |
+| `agentabi demo` | Self-contained demo against synthetic states with injected regressions. |
 
-## Collaborate with your team
+Exit codes: `0` success / below threshold, `1` findings at or above `--fail-on`, `2` usage or input error.
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+## What gets normalized
 
-## Test and Deploy
+Context and identity files, persistent memory, skills, cron jobs, hooks, tool policies, MCP declarations, channels, delivery targets, and runtime configuration. Every component records a stable id, category, logical name, relative source path, SHA-256 digest (when safe), redacted metadata, evidence, confidence, and warnings.
 
-Use the built-in continuous integration in GitLab.
+## Severities and scoring
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+- **BREAKING** (-20): missing persistent memory, all memory absent, enabled cron job or delivery target disappeared, required skill disappeared, duplicate destination skill names, privileged isolation explicitly weakened.
+- **HIGH** (-10): substantial memory-count drop, tool-permission scope broadened, unrestricted shell introduced, MCP executable changed, active hook scope broadened, active channel disappeared, cron schedule materially changed.
+- **WARNING** (-3): path relocation, skill digest changed, MCP argument changes, environment-variable requirement changes, unknown schema, incomplete scan, unsupported components.
 
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+The score starts at 100 and is clamped to 0-100. **Any breaking finding forces `Recommendation: DO NOT DEPLOY`.**
 
 ## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+
+- Claude Code runtime support (not supported in v0.1.0)
+- More runtime adapters and community-contributed layouts
+- Configurable severity policies
 
 ## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+See [CONTRIBUTING.md](CONTRIBUTING.md). Security policy: [SECURITY.md](SECURITY.md).
 
 ## License
-For open source projects, say how it is licensed.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+[MIT](LICENSE)
