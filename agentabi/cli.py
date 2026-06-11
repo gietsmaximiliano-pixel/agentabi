@@ -12,7 +12,8 @@ from agentabi.compare import compare
 from agentabi.demo import build_demo_states
 from agentabi.models import SEVERITY_ORDER, DiffReport, Manifest, Severity
 from agentabi.report import render_terminal, to_json, to_markdown
-from agentabi.scanner import ScanError, snapshot as scan_snapshot
+from agentabi.scanner import ScanError
+from agentabi.scanner import snapshot as scan_snapshot
 
 app = typer.Typer(
     name="agentabi",
