@@ -1,0 +1,14 @@
+[
+  {
+    "name": "daily-report",
+    "schedule": "0 9 * * *",
+    "enabled": true,
+    "delivery": {"channel": "telegram"}
+  },
+  {
+    "name": "weekly-digest",
+    "schedule": "0 8 * * 1",
+    "enabled": true,
+    "delivery": {"channel": "email"}
+  }
+]

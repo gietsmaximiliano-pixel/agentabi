@@ -1,0 +1,27 @@
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
+stages:
+  - validate
+
+validate:
+  stage: validate
+  image: python:${PYTHON_VERSION}
+  parallel:
+    matrix:
+      - PYTHON_VERSION: ["3.11", "3.12", "3.13"]
+  script:
+    - python -m pip install -e ".[dev]"
+    - ruff check .
+    - ruff format --check .
+    - mypy agentabi
+    - pytest --cov=agentabi --cov-report=term-missing
+    - python -m build
+    - twine check dist/*
+    - agentabi --help
+    - agentabi --version
+    - agentabi demo

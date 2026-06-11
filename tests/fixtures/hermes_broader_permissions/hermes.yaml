@@ -1,0 +1,30 @@
+identity:
+  name: atlas
+model: synthetic-small
+required_skills:
+  - research
+  - reporter
+tools:
+  allow:
+    - browser
+    - files
+    - exec
+    - network
+  shell: unrestricted
+  privileged_isolation: false
+mcp:
+  servers:
+    search:
+      command: npx
+      args:
+        - -y
+        - synthetic-search
+      env:
+        SEARCH_API_KEY: placeholder
+channels:
+  telegram:
+    enabled: true
+    kind: chat
+  email:
+    enabled: true
+    kind: mail

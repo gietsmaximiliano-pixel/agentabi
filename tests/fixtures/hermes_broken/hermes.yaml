@@ -1,0 +1,25 @@
+identity:
+  name: atlas
+model: synthetic-small
+required_skills:
+  - research
+  - reporter
+tools:
+  allow:
+    - browser
+    - files
+  shell: sandboxed
+  privileged_isolation: true
+mcp:
+  servers:
+    search:
+      command: bunx
+      args:
+        - -y
+        - synthetic-search
+      env:
+        SEARCH_API_KEY: placeholder
+channels:
+  email:
+    enabled: true
+    kind: mail

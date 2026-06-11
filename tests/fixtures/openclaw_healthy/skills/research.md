@@ -1,0 +1,3 @@
+# research
+
+Synthetic research skill.

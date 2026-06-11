@@ -1,0 +1,1 @@
+Core synthetic memory.
