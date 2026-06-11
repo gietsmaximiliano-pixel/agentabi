@@ -1,0 +1,6 @@
+hooks:
+  - name: on-message
+    events:
+      - message.received
+    scope: inbound
+    enabled: true

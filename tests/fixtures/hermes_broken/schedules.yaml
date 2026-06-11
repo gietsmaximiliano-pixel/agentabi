@@ -1,0 +1,9 @@
+jobs:
+  - name: daily-report
+    schedule: "0 9 * * *"
+    enabled: true
+  - name: weekly-digest
+    schedule: "0 8 * * 1"
+    enabled: true
+    deliver_to:
+      channel: email
