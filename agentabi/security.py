@@ -19,19 +19,38 @@ SECRET_FILE_PATTERNS: tuple[str, ...] = (
     "tokens.*",
     "*.pem",
     "*.key",
+    "*.pfx",
+    "*.p12",
+    "*.jks",
+    "*.keystore",
+    "*.gpg",
+    "*.asc",
     "id_rsa",
+    "id_rsa.*",
     "id_ed25519",
+    "id_ed25519.*",
+    "id_ecdsa",
+    "id_ecdsa.*",
+    "id_dsa",
+    "id_dsa.*",
     "private*",
     "credential*",
     "password*",
     "cookie*",
     "vault*",
+    ".htpasswd",
+    ".netrc",
+    ".pgpass",
+    "*.keyring",
+    "service-account*.json",
+    "*-credentials.json",
 )
 
 SENSITIVE_KEY_PARTS: tuple[str, ...] = (
     "token",
     "secret",
     "password",
+    "passwd",
     "api_key",
     "apikey",
     "credential",
@@ -42,6 +61,15 @@ SENSITIVE_KEY_PARTS: tuple[str, ...] = (
     "refresh_token",
     "client_secret",
     "webhook",
+    "auth_token",
+    "session_id",
+    "session_key",
+    "signing_key",
+    "encryption_key",
+    "passphrase",
+    "service_account",
+    "connection_string",
+    "database_url",
 )
 
 MAX_DEPTH = 12
@@ -90,7 +118,7 @@ def sha256_file(path: Path) -> str:
 def stable_id(category: str, name: str, path: str) -> str:
     """Return a short, deterministic identifier for a component."""
     raw = f"{category}:{name}:{path}".encode()
-    return hashlib.sha256(raw).hexdigest()[:12]
+    return hashlib.sha256(raw, usedforsecurity=False).hexdigest()[:12]
 
 
 @dataclass
