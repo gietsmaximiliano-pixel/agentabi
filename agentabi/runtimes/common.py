@@ -195,3 +195,81 @@ def hook_components(root: Path, path: Path, hooks: list[Any]) -> list[Component]
             )
         )
     return components
+
+
+# ---------------------------------------------------------------------------
+# Shared high-level loading helpers used by multiple runtime adapters
+# ---------------------------------------------------------------------------
+
+
+def load_runtime_config(
+    root: Path,
+    config_path: Path,
+    config_name: str,
+    *,
+    identity_key: str,
+) -> tuple[list[Component], set[str]]:
+    """Load a runtime config, returning normalized components and required skill names.
+
+    On parse failure the returned list contains a single warning component and
+    the required-skills set is empty.
+    """
+    config, error = load_structured(config_path)
+    if error or not isinstance(config, dict):
+        return [
+            make_component(
+                Category.RUNTIME_CONFIG,
+                config_name,
+                root,
+                config_path,
+                confidence=0.3,
+                warnings=[error or "unknown schema: expected a mapping"],
+            )
+        ], set()
+    required = {str(item) for item in config.get("required_skills") or []}
+    return (
+        config_components(root, config_path, config, config_name, identity_key=identity_key),
+        required,
+    )
+
+
+def load_list_or_warn(
+    root: Path,
+    path: Path,
+    name: str,
+    category: Category,
+    *,
+    key: str | None = None,
+    error_hint: str = "a list",
+) -> tuple[list[Any] | None, Component | None]:
+    """Load a structured file and extract a list.
+
+    Returns ``(items, None)`` on success or ``(None, warning_component)`` on
+    failure.  When *key* is given the loaded data is expected to be a mapping
+    and ``data[key]`` is used as the list.
+    """
+    data, error = load_structured(path)
+    items: Any = data
+    if key is not None:
+        items = data.get(key) if isinstance(data, dict) else None
+    if error or not isinstance(items, list):
+        return None, make_component(
+            category,
+            name,
+            root,
+            path,
+            confidence=0.3,
+            warnings=[error or f"unknown schema: expected {error_hint}"],
+        )
+    return items, None
+
+
+def skill_name_from_path(path: Path, *, sentinel_stem: str) -> str:
+    """Derive a skill name from its file path.
+
+    If the file stem matches *sentinel_stem* the parent directory name is used;
+    otherwise the stem itself is the skill name.
+    """
+    if path.stem == sentinel_stem:
+        return path.parent.name
+    return path.stem

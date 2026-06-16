@@ -49,6 +49,10 @@ class StrictModel(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    def to_pretty_json(self) -> str:
+        """Serialize as indented JSON with a trailing newline."""
+        return self.model_dump_json(indent=2) + "\n"
+
 
 class Component(StrictModel):
     """A single normalized piece of persistent agent state."""
