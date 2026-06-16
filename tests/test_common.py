@@ -66,27 +66,34 @@ def test_load_structured_invalid_yaml(tmp_path: Path) -> None:
 def test_safe_digest_normal_file(tmp_path: Path) -> None:
     path = tmp_path / "file.txt"
     path.write_text("hello", encoding="utf-8")
-    digest = safe_digest(path)
+    digest, warning = safe_digest(path)
     assert digest is not None
     assert len(digest) == 64
+    assert warning is None
 
 
 def test_safe_digest_large_file(tmp_path: Path) -> None:
     path = tmp_path / "large.bin"
     path.write_bytes(b"\x00" * (MAX_FILE_SIZE + 1))
-    assert safe_digest(path) is None
+    digest, warning = safe_digest(path)
+    assert digest is None
+    assert warning is not None and "size limit" in warning
 
 
 def test_safe_digest_missing_file(tmp_path: Path) -> None:
     path = tmp_path / "missing.txt"
-    assert safe_digest(path) is None
+    digest, warning = safe_digest(path)
+    assert digest is None
+    assert warning is not None
 
 
 def test_safe_digest_oserror_on_stat(tmp_path: Path) -> None:
     path = tmp_path / "file.txt"
     path.write_text("data", encoding="utf-8")
     with patch.object(Path, "stat", side_effect=OSError("boom")):
-        assert safe_digest(path) is None
+        digest, warning = safe_digest(path)
+        assert digest is None
+        assert warning is not None
 
 
 def test_job_components_skips_non_dict(tmp_path: Path) -> None:

@@ -92,7 +92,7 @@ def snapshot(
     """Scan a state directory and produce a normalized manifest."""
     _check_choice(runtime, RUNTIME_CHOICES, "--runtime")
     manifest = _snapshot(path, runtime)
-    payload = manifest.model_dump_json(indent=2) + "\n"
+    payload = manifest.to_pretty_json()
     if out:
         try:
             out.write_text(payload, encoding="utf-8")
@@ -160,8 +160,8 @@ def verify(
     if out_dir:
         try:
             out_dir.mkdir(parents=True, exist_ok=True)
-            source_payload = before.model_dump_json(indent=2) + "\n"
-            candidate_payload = after.model_dump_json(indent=2) + "\n"
+            source_payload = before.to_pretty_json()
+            candidate_payload = after.to_pretty_json()
             (out_dir / "source.manifest.json").write_text(source_payload, encoding="utf-8")
             (out_dir / "candidate.manifest.json").write_text(candidate_payload, encoding="utf-8")
             (out_dir / "report.json").write_text(to_json(report), encoding="utf-8")

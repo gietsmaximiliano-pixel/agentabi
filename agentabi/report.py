@@ -19,7 +19,7 @@ SEVERITY_STYLES: dict[Severity, str] = {
 
 def to_json(report: DiffReport) -> str:
     """Serialize a diff report as pretty JSON."""
-    return report.model_dump_json(indent=2) + "\n"
+    return report.to_pretty_json()
 
 
 def to_markdown(report: DiffReport) -> str:
