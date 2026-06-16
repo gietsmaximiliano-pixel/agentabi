@@ -24,18 +24,21 @@ def load_structured(path: Path) -> tuple[Any, str | None]:
         if path.suffix == ".json":
             return json.loads(text), None
         return yaml.safe_load(text), None
-    except (json.JSONDecodeError, yaml.YAMLError):
-        return None, "unknown schema: file could not be parsed"
+    except (json.JSONDecodeError, yaml.YAMLError) as exc:
+        return None, f"unknown schema: {exc}"
 
 
-def safe_digest(path: Path) -> str | None:
-    """Hash a file when it is small enough and readable; otherwise return None."""
+def safe_digest(path: Path) -> tuple[str | None, str | None]:
+    """Hash a file when it is small enough and readable.
+
+    Returns ``(digest, warning)``.
+    """
     try:
         if path.stat().st_size > MAX_FILE_SIZE:
-            return None
-        return sha256_file(path)
-    except OSError:
-        return None
+            return None, f"file exceeds size limit ({MAX_FILE_SIZE} bytes); digest skipped"
+        return sha256_file(path), None
+    except OSError as exc:
+        return None, f"could not hash file: {exc}"
 
 
 def make_component(
@@ -53,8 +56,12 @@ def make_component(
     """Build a normalized component with a stable id and redacted metadata."""
     relative = path.relative_to(root).as_posix() if path is not None else ""
     component_digest = None
+    digest_warning = None
     if digest and path is not None and path.is_file():
-        component_digest = safe_digest(path)
+        component_digest, digest_warning = safe_digest(path)
+    all_warnings = list(warnings or [])
+    if digest_warning:
+        all_warnings.append(digest_warning)
     return Component(
         id=stable_id(category.value, name, relative),
         category=category,
@@ -64,7 +71,7 @@ def make_component(
         metadata=redact(metadata or {}),
         evidence=evidence or ([relative] if relative else []),
         confidence=confidence,
-        warnings=warnings or [],
+        warnings=all_warnings,
     )
 
 

@@ -85,10 +85,28 @@ def test_secret_files_never_read(fixtures_dir):
     assert "NOT A REAL" not in dump
 
 
-def test_malformed_config_handled(fixtures_dir):
+def test_malformed_config_includes_parse_detail(fixtures_dir):
     manifest = snapshot(fixtures_dir / "malformed_state")
     warnings = [w for c in manifest.components for w in c.warnings]
-    assert any("unknown schema" in w for w in warnings)
+    schema_warnings = [w for w in warnings if "unknown schema" in w]
+    assert schema_warnings
+    assert not any(w == "unknown schema: file could not be parsed" for w in schema_warnings)
+
+
+def test_unreadable_file_digest_warning(tmp_path):
+    (tmp_path / "openclaw.json").write_text('{"agent": {}}', encoding="utf-8")
+    mem_dir = tmp_path / "memory"
+    mem_dir.mkdir()
+    mem_file = mem_dir / "core.md"
+    mem_file.write_text("data", encoding="utf-8")
+    mem_file.chmod(0o000)
+    try:
+        manifest = snapshot(tmp_path, "openclaw")
+        memory_components = [c for c in manifest.components if c.category is Category.MEMORY]
+        assert memory_components
+        assert any("could not hash file" in w for c in memory_components for w in c.warnings)
+    finally:
+        mem_file.chmod(0o644)
 
 
 def test_forced_runtime(fixtures_dir):

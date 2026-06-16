@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 
 import typer
+from pydantic import ValidationError
 from rich.console import Console
 
 from agentabi import __version__
@@ -66,7 +67,7 @@ def _snapshot(path: Path, runtime: str) -> Manifest:
 def _load_manifest(path: Path) -> Manifest:
     try:
         return Manifest.model_validate_json(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError, ValidationError) as exc:
         console.print(f"[red]error:[/red] cannot load manifest {path}: {exc}")
         raise typer.Exit(2) from exc
 
@@ -93,7 +94,11 @@ def snapshot(
     manifest = _snapshot(path, runtime)
     payload = manifest.model_dump_json(indent=2) + "\n"
     if out:
-        out.write_text(payload, encoding="utf-8")
+        try:
+            out.write_text(payload, encoding="utf-8")
+        except OSError as exc:
+            console.print(f"[red]error:[/red] cannot write manifest to {out}: {exc}")
+            raise typer.Exit(2) from exc
         console.print(f"Manifest written to {out}")
     if json_output:
         typer.echo(payload, nl=False)
@@ -121,7 +126,11 @@ def diff(
     _check_choice(fail_on, FAIL_ON_CHOICES, "--fail-on")
     report = compare(_load_manifest(before), _load_manifest(after))
     if markdown:
-        markdown.write_text(to_markdown(report), encoding="utf-8")
+        try:
+            markdown.write_text(to_markdown(report), encoding="utf-8")
+        except OSError as exc:
+            console.print(f"[red]error:[/red] cannot write markdown report to {markdown}: {exc}")
+            raise typer.Exit(2) from exc
     if score_only:
         typer.echo(str(report.score))
     elif json_output:
@@ -149,13 +158,17 @@ def verify(
     after = _snapshot(candidate, to_runtime)
     report = compare(before, after)
     if out_dir:
-        out_dir.mkdir(parents=True, exist_ok=True)
-        source_payload = before.model_dump_json(indent=2) + "\n"
-        candidate_payload = after.model_dump_json(indent=2) + "\n"
-        (out_dir / "source.manifest.json").write_text(source_payload, encoding="utf-8")
-        (out_dir / "candidate.manifest.json").write_text(candidate_payload, encoding="utf-8")
-        (out_dir / "report.json").write_text(to_json(report), encoding="utf-8")
-        (out_dir / "report.md").write_text(to_markdown(report), encoding="utf-8")
+        try:
+            out_dir.mkdir(parents=True, exist_ok=True)
+            source_payload = before.model_dump_json(indent=2) + "\n"
+            candidate_payload = after.model_dump_json(indent=2) + "\n"
+            (out_dir / "source.manifest.json").write_text(source_payload, encoding="utf-8")
+            (out_dir / "candidate.manifest.json").write_text(candidate_payload, encoding="utf-8")
+            (out_dir / "report.json").write_text(to_json(report), encoding="utf-8")
+            (out_dir / "report.md").write_text(to_markdown(report), encoding="utf-8")
+        except OSError as exc:
+            console.print(f"[red]error:[/red] cannot write reports to {out_dir}: {exc}")
+            raise typer.Exit(2) from exc
     if json_output:
         typer.echo(to_json(report), nl=False)
     else:
