@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -113,6 +115,46 @@ def test_safe_walk_file_limit(tmp_path):
     result = safe_walk(tmp_path, max_files=5)
     assert result.truncated
     assert len(result.files) <= 5
+
+
+def test_safe_walk_unreadable_directory_noted(tmp_path):
+    subdir = tmp_path / "locked"
+    subdir.mkdir()
+    (subdir / "file.md").write_text("content", encoding="utf-8")
+    subdir.chmod(0o000)
+    try:
+        result = safe_walk(tmp_path)
+        assert result.unreadable >= 1
+        assert any("unreadable directory" in note for note in result.notes)
+    finally:
+        subdir.chmod(0o755)
+
+
+def test_safe_walk_secret_file_stat_failure_noted(tmp_path):
+    env_file = tmp_path / ".env"
+    env_file.write_text("SECRET=x", encoding="utf-8")
+
+    original_stat = Path.stat
+    call_counts: dict[str, int] = {}
+
+    def patched_stat(self: Path, **kwargs):  # type: ignore[no-untyped-def]
+        key = str(self)
+        if self.name == ".env":
+            count = call_counts.get(key, 0)
+            call_counts[key] = count + 1
+            # is_symlink/is_dir/is_file make internal stat calls first;
+            # only fail once those have had a chance to succeed.
+            if count >= 3:
+                raise PermissionError("synthetic stat failure")
+        return original_stat(self, **kwargs)
+
+    with patch.object(Path, "stat", patched_stat):
+        result = safe_walk(tmp_path)
+    secret_names = [name for name, _ in result.secret_files]
+    assert ".env" in secret_names
+    stat_entry = [s for name, s in result.secret_files if name == ".env"]
+    assert stat_entry[0] == -1
+    assert any("could not stat secret file" in note for note in result.notes)
 
 
 def test_safe_walk_depth_limit(tmp_path):

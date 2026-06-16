@@ -125,8 +125,13 @@ def safe_walk(root: Path, *, max_depth: int = MAX_DEPTH, max_files: int = MAX_FI
             continue
         try:
             entries = sorted(current.iterdir(), key=lambda entry: entry.name)
-        except OSError:
+        except OSError as exc:
             result.unreadable += 1
+            try:
+                rel = current.relative_to(root).as_posix()
+            except ValueError:
+                rel = current.name
+            result.notes.append(f"unreadable directory {rel}: {exc}")
             continue
         for entry in entries:
             if len(result.files) >= max_files:
@@ -146,8 +151,9 @@ def safe_walk(root: Path, *, max_depth: int = MAX_DEPTH, max_files: int = MAX_FI
             if is_secret_filename(entry.name):
                 try:
                     size = entry.stat().st_size
-                except OSError:
+                except OSError as exc:
                     size = -1
+                    result.notes.append(f"could not stat secret file {relative}: {exc}")
                 result.secret_files.append((relative, size))
                 continue
             result.files.append(entry)

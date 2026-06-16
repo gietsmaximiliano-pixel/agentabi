@@ -195,6 +195,53 @@ def test_demo():
     assert "DO NOT DEPLOY" in result.output
 
 
+def test_diff_rejects_invalid_schema_manifest(tmp_path):
+    bad = tmp_path / "bad.json"
+    bad.write_text('{"not_a": "manifest"}', encoding="utf-8")
+    result = runner.invoke(app, ["diff", str(bad), str(bad)])
+    assert result.exit_code == 2
+    assert "error" in result.output.lower()
+
+
+def test_snapshot_out_write_error(fixtures_dir, tmp_path):
+    out = tmp_path / "no-such-dir" / "manifest.json"
+    result = runner.invoke(
+        app, ["snapshot", str(fixtures_dir / "openclaw_healthy"), "--out", str(out)]
+    )
+    assert result.exit_code == 2
+    assert "cannot write" in result.output.lower()
+
+
+def test_diff_markdown_write_error(fixtures_dir, tmp_path):
+    before = tmp_path / "before.json"
+    runner.invoke(app, ["snapshot", str(fixtures_dir / "openclaw_healthy"), "--out", str(before)])
+    markdown_path = tmp_path / "no-such-dir" / "report.md"
+    result = runner.invoke(
+        app,
+        ["diff", str(before), str(before), "--markdown", str(markdown_path), "--fail-on", "none"],
+    )
+    assert result.exit_code == 2
+    assert "cannot write" in result.output.lower()
+
+
+def test_verify_out_dir_write_error(fixtures_dir):
+    out_dir = "/proc/nonexistent"
+    result = runner.invoke(
+        app,
+        [
+            "verify",
+            "--source",
+            str(fixtures_dir / "openclaw_healthy"),
+            "--candidate",
+            str(fixtures_dir / "hermes_healthy"),
+            "--out-dir",
+            out_dir,
+        ],
+    )
+    assert result.exit_code == 2
+    assert "cannot write" in result.output.lower()
+
+
 def test_verify_does_not_modify_inputs(fixtures_dir, tmp_path, tree_digest):
     source = tmp_path / "source"
     candidate = tmp_path / "candidate"
